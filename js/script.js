@@ -1,26 +1,103 @@
 import * as THREE from 'three';
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 2;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
+var earthMap = new THREE.TextureLoader().load('../assets/land_ocean_ice_2048.png');
+var earthGeometry = new THREE.PlaneGeometry(4, 2);
+var earthMaterial = new THREE.MeshBasicMaterial({ map: earthMap, side: THREE.DoubleSide });
+var earth = new THREE.Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh( geometry, material );
-scene.add( cube );
+var particleCount = 1000;
+var particles = new THREE.BufferGeometry();
+var positions = new Float32Array(particleCount * 3);
 
-camera.position.z = 5;
+for (var i = 0; i < particleCount; i++) {
+    var x = Math.random() * 4 - 2;
+    var y = Math.random() * 2 - 1;
+    var z = Math.random() * 0.2;
+
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+}
+
+particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+var particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.01 });
+var particleSystem = new THREE.Points(particles, particleMaterial);
+scene.add(particleSystem);
+
+function animateParticles() {
+    var positionAttribute = particles.getAttribute('position');
+
+    for (var i = 0; i < particleCount; i++) {
+        var x = positionAttribute.getX(i);
+        var y = positionAttribute.getY(i);
+        var z = positionAttribute.getZ(i);
+
+        z -= 0.001; // Adjust the speed of particles
+        if (z < 0) {
+            z = 0.2; // Reset the particles when they move out of view
+        }
+
+        positionAttribute.setXYZ(i, x, y, z);
+    }
+
+    positionAttribute.needsUpdate = true;
+}
 
 function animate() {
-	requestAnimationFrame( animate );
-
-	cube.rotation.x += 0.01;
-	cube.rotation.y += 0.01;
-
-	renderer.render( scene, camera );
+    requestAnimationFrame(animate);
+    animateParticles();
+    renderer.render(scene, camera);
 }
+
+// Add event listeners for zooming and panning
+var zoomSpeed = 0.1;
+var panSpeed = 0.01;
+
+function zoom(delta) {
+    camera.position.z -= delta * zoomSpeed;
+    camera.fov *= 1 + delta * zoomSpeed;
+    camera.updateProjectionMatrix();
+}
+
+function pan(deltaX, deltaY) {
+    camera.position.x -= deltaX * panSpeed;
+    camera.position.y += deltaY * panSpeed;
+}
+
+document.addEventListener('wheel', function(event) {
+    zoom(event.deltaY);
+});
+
+var isDragging = false;
+var previousX, previousY;
+
+document.addEventListener('mousedown', function(event) {
+    isDragging = true;
+    previousX = event.clientX;
+    previousY = event.clientY;
+});
+
+document.addEventListener('mousemove', function(event) {
+    if (isDragging) {
+        var deltaX = event.clientX - previousX;
+        var deltaY = event.clientY - previousY;
+        previousX = event.clientX;
+        previousY = event.clientY;
+        pan(deltaX, deltaY);
+    }
+});
+
+document.addEventListener('mouseup', function() {
+    isDragging = false;
+});
 
 animate();
