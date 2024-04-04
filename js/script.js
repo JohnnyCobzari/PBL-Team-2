@@ -17,30 +17,47 @@ earthMap.minFilter = THREE.LinearFilter;
 var earthGeometry = new THREE.PlaneGeometry(360, 180);
 var earthMaterial = new THREE.MeshBasicMaterial({ map: earthMap, side: THREE.DoubleSide });
 var earth = new THREE.Mesh(earthGeometry, earthMaterial);
+earth.position.x = 0;
+earth.position.y = 0;
+earth.position.z = 0;
+
 scene.add(earth);
 
-var particleCount = 100000;
+var particleCount = 1036800;
 var particles = new THREE.BufferGeometry();
 var positions = new Float32Array(particleCount * 3);
 
-const response = await fetch('../assets/small_wind_data.json');
-const windData = await response.json();
-  
+const response = await fetch('../assets/wind_data.json');
+const windData = await response.json();  
 console.log(windData);
 
-for (var i = 0; i < particleCount; i++) {
-	var x = Math.random() * 360 - 180;
-    var y = Math.random() * 180 - 90;
-    var z = 0;
+var i = 0;
+var points = [];
+    windData.forEach(data => {
+        var x = data.longitude - 180; // Assuming longitude maps to x-axis
+        var y = data.latitude;  // Assuming latitude maps to y-axis
+        var z = Math.sqrt(data.u10*data.u10 + data.v10*data.v10); // Assuming z-coordinate is 0 for all points
+        
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+        i = i + 1;
+    });
 
-    positions[i * 3] = x;
-    positions[i * 3 + 1] = y;
-    positions[i * 3 + 2] = 0;
-}
+console.log(positions);
+// for (var i = 0; i < particleCount; i++) {
+// 	var x = Math.random() * 360 - 180;
+//     var y = Math.random() * 180 - 90;
+//     var z = 0;
+
+//     positions[i * 3] = x;
+//     positions[i * 3 + 1] = y;
+//     positions[i * 3 + 2] = 0;
+// }
 
 particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-var particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.01 });
+var particleMaterial = new THREE.PointsMaterial({ color: 0xff0000, size: 0.01 });
 var particleSystem = new THREE.Points(particles, particleMaterial);
 scene.add(particleSystem);
 
