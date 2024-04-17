@@ -9,5 +9,10 @@ npm install --save three
 npm install --save-dev vite
 
 3.From your terminal, run:
+
+# vite
 npx vite
-4.If everything went well, you'll see a URL like http://localhost:5173 appear in your terminal, and can open that URL to see your web application.
+
+4.If everything went well, you'll see a URL like 
+**http://localhost:5173** 
+appear in your terminal, and can open that URL to see your web application.
