@@ -1,3 +1,85 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Wind Map</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden; /* Prevent horizontal scrollbar */
+        }
+        #menu {
+            position: fixed;
+            left: -250px; /* Initially hide the menu off-screen */
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            background-color: #333;
+            color: #1a5da8;
+            padding: 20px;
+            transition: left 0.3s ease;
+        }
+        #menu ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 30px; /* Add margin at the top to lower the list */
+        }
+        #menu ul li {
+            margin-bottom: 15px;
+        }
+        #menu ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 18px; /* Increase font size */
+            font-weight: bold; /* Set font weight to bold */
+        }
+        #menuToggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 999; /* Ensure the toggle button is above other content */
+            color: #1ac534;
+            font-size: 20px; /* Increase font size for the menu toggle */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu Toggle Button -->
+    <div id="menuToggle">&#9776; Menu</div>
+
+    <!-- Side Menu -->
+    <div id="menu">
+        <ul>
+            <li><a href="aboutus.html">About Us</a></li>
+            <li><a href="historicaldata.html">Historical Data</a></li>
+            <li><a href="index.html">Home</a></li>
+        </ul>
+    </div>
+
+    <script>
+        // JavaScript to handle menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            var menuToggle = document.getElementById('menuToggle');
+            var menu = document.getElementById('menu');
+
+            menuToggle.addEventListener('click', function() {
+                if (menu.style.left === '-250px') {
+                    menu.style.left = '0';
+                } else {
+                    menu.style.left = '-250px';
+                }
+            });
+        });
+    </script>
+
+    <script type="module" src="/js/script.js"></script>
+</body>
+</html>
+=======
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -98,3 +180,4 @@
 		</body>
 	  
 </html>
+>>>>>>> 1c92415ab36ca45aeeba8ff11a359db985c3f415
