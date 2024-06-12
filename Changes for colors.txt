@@ -1,0 +1,68 @@
+PArt that had to be added in itinit ot change the colors:
+
+particles = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const colors = new Float32Array(particleCount * 3); // New colors array
+for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = Math.random() * 360 - 180;
+    positions[i * 3 + 1] = Math.random() * 180 - 90;
+    positions[i * 3 + 2] = 0;
+
+    // Initialize colors to white
+    colors[i * 3] = 1;
+    colors[i * 3 + 1] = 1;
+    colors[i * 3 + 2] = 1;
+}
+particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+particles.setAttribute('color', new THREE.BufferAttribute(colors, 3)); // Set color attribute
+const particleMaterial = new THREE.PointsMaterial({ size: 0.1, vertexColors: true }); // Enable vertex colors
+particleSystem = new THREE.Points(particles, particleMaterial);
+scene.add(particleSystem);
+
+
+Animation function part:
+
+
+
+function animateParticles() {
+    const positionAttribute = particles.getAttribute('position');
+    const colorAttribute = particles.getAttribute('color'); // Get color attribute
+    const speedFactor = 0.005;
+
+    for (let i = 0; i < particleCount; i++) {
+        let x = positionAttribute.getX(i);
+        let y = positionAttribute.getY(i);
+        const iy = Math.round(Math.abs(y - 90) * 4);
+        const jx = Math.round((x + 180) * 4);
+
+        if (iy < 0 || iy >= 721 || jx < 0 || jx >= 1440) continue;
+
+        const uComp = windSpeedU[iy][jx];
+        const vComp = windSpeedV[iy][jx];
+        const velocity = Math.sqrt(uComp * uComp + vComp * vComp); // Calculate velocity
+
+        // Map velocity to hue (0 to 120)
+        const maxVelocity = 10; // Adjust based on expected wind speed range
+        const hue = (velocity / maxVelocity) * 120; // Map velocity to hue (0 to 120)
+        const color = new THREE.Color();
+        color.setHSL(hue / 360, 1.0, 0.5); // Convert hue to HSL
+
+        colorAttribute.setXYZ(i, color.r, color.g, color.b); // Set color
+
+        x += speedFactor * uComp;
+        y += speedFactor * vComp;
+
+        if ((x < -180) || (x >= 180)) x = Math.random() * 360 - 180;
+        if ((y < -90) || (y > 90)) y = Math.random() * 180 - 90;
+
+        if (Math.abs(uComp) < 0.0005 && Math.abs(vComp) < 0.0005 || Math.random() > 0.99) {
+            x = Math.random() * 360 - 180;
+            y = Math.random() * 180 - 90;
+        }
+
+        positionAttribute.setXYZ(i, x, y, 0);
+    }
+
+    positionAttribute.needsUpdate = true;
+    colorAttribute.needsUpdate = true; // Update color attribute
+}
