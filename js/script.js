@@ -12,12 +12,15 @@ const particleLayer = new THREE.Layers();
 particleLayer.set(PARTICLE_SCENE);
 
 let scene, camera, renderer, stats, particleComposer, finalComposer, particleSystem, particles, target, controls, earth;
-const particleCount = 25000;
+let particleTexture, particleMaterial;
+
+const particleCount = 15000;
 const windSpeedU = Array.from({ length: 721 }, () => Array(1440).fill(0));
 const windSpeedV = Array.from({ length: 721 }, () => Array(1440).fill(0));
 
 const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
 const materials = {};
+
 scene = new THREE.Scene();
 camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 200;
@@ -29,6 +32,7 @@ renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 document.body.appendChild(renderer.domElement);
+
 stats = new Stats();
 document.body.appendChild( stats.dom );
 
@@ -61,7 +65,6 @@ async function init() {
       windSpeedV[i][j] = data.v10;
   });
 
-
   particles = new THREE.BufferGeometry();
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3); // colors array
@@ -70,7 +73,7 @@ async function init() {
       positions[i * 3 + 1] = Math.random() * 180 - 90;
       positions[i * 3 + 2] = 1;
 
-      // Init colors to white
+      // Init colors white
       colors[i * 3] = 1;
       colors[i * 3 + 1] = 1;
       colors[i * 3 + 2] = 1;
@@ -78,8 +81,8 @@ async function init() {
   particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   particles.setAttribute('color', new THREE.BufferAttribute(colors, 3)); // Set color attribute
   
-  const particleTexture = new THREE.TextureLoader().load('../assets/circle.png');
-  const particleMaterial = new THREE.PointsMaterial({ 
+  particleTexture = new THREE.TextureLoader().load('../assets/circle.png');
+  particleMaterial = new THREE.PointsMaterial({ 
     size: 1,
     vertexColors: true,
     map: particleTexture,
@@ -220,6 +223,7 @@ window.onresize = function () {
 
 controls.addEventListener('change', () => {
   camera.getViewSize( camera.position.z, target );
+  particleMaterial.size = camera.position.z / 100;
   // console.log(target.x);
   // console.log(target.y);
   // console.log(getCameraCenter());
