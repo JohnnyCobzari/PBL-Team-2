@@ -13,6 +13,7 @@ particleLayer.set(PARTICLE_SCENE);
 
 let scene, camera, renderer, stats, particleComposer, finalComposer, particleSystem, particles, target, controls, earth;
 let particleTexture, particleMaterial;
+let center, nonNullCenter, visibleWidth, visibleHeight;
 
 const particleCount = 15000;
 const windSpeedU = Array.from({ length: 721 }, () => Array(1440).fill(0));
@@ -49,7 +50,7 @@ const mouse = new THREE.Vector2();
 
 async function init() {
 
-  const earthMap = new THREE.TextureLoader().load('../assets/worldm.jpeg');
+  const earthMap = new THREE.TextureLoader().load('../assets/worldm_low_brightness.jpeg');
   earthMap.minFilter = THREE.LinearFilter;
   const earthGeometry = new THREE.PlaneGeometry(360, 180);
   const earthMaterial = new THREE.MeshBasicMaterial({ map: earthMap, side: THREE.DoubleSide });
@@ -142,8 +143,15 @@ async function init() {
 
   target = new THREE.Vector2(); 
   camera.getViewSize( camera.position.z, target );
-  // console.log(target.x);
-  // console.log(target.y);
+  center = getCameraCenter();
+  if (center != null) nonNullCenter = center;
+  visibleWidth = target.x;
+  visibleHeight = target.y;
+
+  // console.log(center.x);
+  // console.log(center.y);
+  // console.log(visibleWidth);
+  // console.log(visibleHeight);
 
   animate();
 }
@@ -152,6 +160,8 @@ function animateParticles() {
   const positionAttribute = particles.getAttribute('position');
   const colorAttribute = particles.getAttribute('color'); // Get color attribute
   const speedFactor = 0.01;
+
+  if ( center == null ) center = nonNullCenter;
 
   for (let i = 0; i < particleCount; i++) {
       let x = positionAttribute.getX(i);
@@ -176,13 +186,19 @@ function animateParticles() {
       x += speedFactor * uComp;
       y += speedFactor * vComp;
 
-      if ((x <= -180) || (x >= 180)) x = Math.random() * 360 - 180;
-      if ((y <= -90) || (y >= 90)) y = Math.random() * 180 - 90;
+      
+      if ((x <= center.x - visibleWidth / 2) || (x >= center.x + visibleWidth / 2)) x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
+      if ((y <= center.y - visibleHeight / 2) || (y >= center.y + visibleHeight / 2)) y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
 
       if (Math.abs(uComp) < 0.0005 && Math.abs(vComp) < 0.0005 || Math.random() > 0.99) {
-          x = Math.random() * 360 - 180;
-          y = Math.random() * 180 - 90;
+          // x = Math.random() * 360 - 180;
+          // y = Math.random() * 180 - 90;
+          x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
+          y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
       }
+
+      if ((x <= -180) || (x >= 180)) x = Math.random() * 360 - 180;
+      if ((y <= -90) || (y >= 90)) y = Math.random() * 180 - 90;
 
       positionAttribute.setXYZ(i, x, y, 0.5);
   }
@@ -222,11 +238,20 @@ window.onresize = function () {
 };
 
 controls.addEventListener('change', () => {
-  camera.getViewSize( camera.position.z, target );
   particleMaterial.size = camera.position.z / 100;
-  // console.log(target.x);
-  // console.log(target.y);
-  // console.log(getCameraCenter());
+
+  if (center != null) nonNullCenter = center;
+  camera.getViewSize( camera.position.z, target );
+  center = getCameraCenter();
+  visibleWidth = target.x;
+  visibleHeight = target.y;
+
+  console.log(nonNullCenter);
+  console.log(center);
+  console.log("\n");
+  // console.log(visibleWidth);
+  // console.log(visibleHeight);
+  // console.log(center);
   // console.log("\n");
 });
 
