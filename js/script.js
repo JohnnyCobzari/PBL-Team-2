@@ -6,13 +6,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 const PARTICLE_SCENE = 1;
 const particleLayer = new THREE.Layers();
 particleLayer.set(PARTICLE_SCENE);
 
 let scene, camera, renderer, stats, particleComposer, finalComposer, particleSystem, particles, target, controls, earth;
-let particleTexture, particleMaterial;
+let particleTexture, particleMaterial, speedFactor;
 let center, nonNullCenter, visibleWidth, visibleHeight;
 
 const particleCount = 15000;
@@ -48,6 +49,45 @@ controls.maxTargetRadius = 180;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
+const gui = new GUI();
+
+const hurricaneEvents = {
+  "Latest Data": 'wind_data.json',
+  "Hurricane1": 'wind_data_1992-08-24.json',
+  "Hurricane2": 'wind_data_1999-05-03.json'
+};
+
+let selectedEvent = 'wind_data.json';
+
+gui.add({ event: selectedEvent }, 'event', hurricaneEvents).name('Wind Data').onChange(async (value) => {
+  selectedEvent = value;
+  await loadWindData(selectedEvent);
+});
+
+
+async function loadWindData(event) {
+  const response = await fetch(`../assets/${event}`);
+  const windData = await response.json();
+
+  // Reset wind speed arrays
+  for (let i = 0; i < 721; i++) {
+    for (let j = 0; j < 1440; j++) {
+      windSpeedU[i][j] = 0;
+      windSpeedV[i][j] = 0;
+    }
+  }
+
+  // Populate wind speed arrays with new data
+  windData.forEach(data => {
+    const i = Math.round(Math.abs(data.latitude - 90) * 4);
+    const j = Math.round((data.longitude) * 4);
+    windSpeedU[i][j] = data.u10;
+    windSpeedV[i][j] = data.v10;
+  });
+}
+
+
+
 async function init() {
 
   const earthMap = new THREE.TextureLoader().load('../assets/worldm_low_brightness.jpeg');
@@ -57,14 +97,7 @@ async function init() {
   earth = new THREE.Mesh(earthGeometry, earthMaterial);
   scene.add(earth);
 
-  const response = await fetch('../assets/wind_data.json');
-  const windData = await response.json();
-  windData.forEach(data => {
-      const i = Math.round(Math.abs(data.latitude - 90) * 4);
-      const j = Math.round((data.longitude) * 4);
-      windSpeedU[i][j] = data.u10;
-      windSpeedV[i][j] = data.v10;
-  });
+  await loadWindData(selectedEvent);
 
   particles = new THREE.BufferGeometry();
   const positions = new Float32Array(particleCount * 3);
@@ -159,7 +192,7 @@ async function init() {
 function animateParticles() {
   const positionAttribute = particles.getAttribute('position');
   const colorAttribute = particles.getAttribute('color'); // Get color attribute
-  const speedFactor = 0.01;
+  speedFactor = 0.01;
 
   if ( center == null ) center = nonNullCenter;
 
@@ -239,6 +272,7 @@ window.onresize = function () {
 
 controls.addEventListener('change', () => {
   particleMaterial.size = camera.position.z / 100;
+  speedFactor = camera.position.z / 20000;
 
   if (center != null) nonNullCenter = center;
   camera.getViewSize( camera.position.z, target );
@@ -246,9 +280,9 @@ controls.addEventListener('change', () => {
   visibleWidth = target.x;
   visibleHeight = target.y;
 
-  console.log(nonNullCenter);
-  console.log(center);
-  console.log("\n");
+  // console.log(nonNullCenter);
+  // console.log(center);
+  // console.log("\n");
   // console.log(visibleWidth);
   // console.log(visibleHeight);
   // console.log(center);
