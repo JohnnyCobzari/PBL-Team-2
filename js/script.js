@@ -53,8 +53,10 @@ const gui = new GUI();
 
 const hurricaneEvents = {
   "Latest Data": 'wind_data.json',
-  "Hurricane1": 'wind_data_1992-08-24.json',
-  "Hurricane2": 'wind_data_1999-05-03.json'
+  "Hurricane 24.08.1992": 'wind_data_1992-08-24.json',
+  "Hurricane 03.05.1999": 'wind_data_1999-05-03.json',
+  "Hurricane Charlie": 'hurricane_charlie.json',
+  "Hurricane Ika": 'hurricane_ika.json'
 };
 
 let selectedEvent = 'wind_data.json';
@@ -69,7 +71,6 @@ async function loadWindData(event) {
   const response = await fetch(`../assets/${event}`);
   const windData = await response.json();
 
-  // Reset wind speed arrays
   for (let i = 0; i < 721; i++) {
     for (let j = 0; j < 1440; j++) {
       windSpeedU[i][j] = 0;
@@ -77,7 +78,6 @@ async function loadWindData(event) {
     }
   }
 
-  // Populate wind speed arrays with new data
   windData.forEach(data => {
     const i = Math.round(Math.abs(data.latitude - 90) * 4);
     const j = Math.round((data.longitude) * 4);
@@ -85,7 +85,6 @@ async function loadWindData(event) {
     windSpeedV[i][j] = data.v10;
   });
 }
-
 
 
 async function init() {
@@ -181,11 +180,6 @@ async function init() {
   visibleWidth = target.x;
   visibleHeight = target.y;
 
-  // console.log(center.x);
-  // console.log(center.y);
-  // console.log(visibleWidth);
-  // console.log(visibleHeight);
-
   animate();
 }
 
@@ -219,13 +213,10 @@ function animateParticles() {
       x += speedFactor * uComp;
       y += speedFactor * vComp;
 
-      
       if ((x <= center.x - visibleWidth / 2) || (x >= center.x + visibleWidth / 2)) x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
       if ((y <= center.y - visibleHeight / 2) || (y >= center.y + visibleHeight / 2)) y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
 
       if (Math.abs(uComp) < 0.0005 && Math.abs(vComp) < 0.0005 || Math.random() > 0.99) {
-          // x = Math.random() * 360 - 180;
-          // y = Math.random() * 180 - 90;
           x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
           y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
       }
@@ -266,6 +257,12 @@ window.onresize = function () {
     particleComposer.setSize( width, height );
     finalComposer.setSize( width, height );
 
+    if (center != null) nonNullCenter = center;
+    camera.getViewSize( camera.position.z, target );
+    center = getCameraCenter();
+    visibleWidth = target.x;
+    visibleHeight = target.y;
+
     animate();
 
 };
@@ -280,13 +277,6 @@ controls.addEventListener('change', () => {
   visibleWidth = target.x;
   visibleHeight = target.y;
 
-  // console.log(nonNullCenter);
-  // console.log(center);
-  // console.log("\n");
-  // console.log(visibleWidth);
-  // console.log(visibleHeight);
-  // console.log(center);
-  // console.log("\n");
 });
 
 function animate() {
