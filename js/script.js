@@ -12,7 +12,7 @@ const particleLayer = new THREE.Layers();
 particleLayer.set(PARTICLE_SCENE);
 
 let scene, camera, renderer, stats, particleComposer, finalComposer, particleSystem, particles, target, controls, earth;
-const particleCount = 10000;
+const particleCount = 25000;
 const windSpeedU = Array.from({ length: 721 }, () => Array(1440).fill(0));
 const windSpeedV = Array.from({ length: 721 }, () => Array(1440).fill(0));
 
@@ -77,7 +77,17 @@ async function init() {
   }
   particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   particles.setAttribute('color', new THREE.BufferAttribute(colors, 3)); // Set color attribute
-  const particleMaterial = new THREE.PointsMaterial({ size: 1, vertexColors: true }); // Enable vertex colors
+  
+  const particleTexture = new THREE.TextureLoader().load('../assets/circle.png');
+  const particleMaterial = new THREE.PointsMaterial({ 
+    size: 1,
+    vertexColors: true,
+    map: particleTexture,
+    transparent: true,
+    alphaTest: 0.5
+   });
+  
+  
   particleSystem = new THREE.Points(particles, particleMaterial);
   scene.add(particleSystem);
   particleSystem.layers.toggle(PARTICLE_SCENE);
@@ -163,15 +173,15 @@ function animateParticles() {
       x += speedFactor * uComp;
       y += speedFactor * vComp;
 
-      if ((x < -180) || (x >= 180)) x = Math.random() * 360 - 180;
-      if ((y < -90) || (y > 90)) y = Math.random() * 180 - 90;
+      if ((x <= -180) || (x >= 180)) x = Math.random() * 360 - 180;
+      if ((y <= -90) || (y >= 90)) y = Math.random() * 180 - 90;
 
       if (Math.abs(uComp) < 0.0005 && Math.abs(vComp) < 0.0005 || Math.random() > 0.99) {
           x = Math.random() * 360 - 180;
           y = Math.random() * 180 - 90;
       }
 
-      positionAttribute.setXYZ(i, x, y, 1);
+      positionAttribute.setXYZ(i, x, y, 0.5);
   }
 
   positionAttribute.needsUpdate = true;
