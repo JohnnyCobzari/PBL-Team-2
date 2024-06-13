@@ -53,10 +53,10 @@ const gui = new GUI();
 
 const hurricaneEvents = {
   "Latest Data": 'wind_data.json',
-  "Hurricane 24.08.1992": 'wind_data_1992-08-24.json',
-  "Hurricane 03.05.1999": 'wind_data_1999-05-03.json',
+  "Hurricane(AUS) 24.08.1992": 'wind_data_1992-08-24.json',
+  "Hurricane(JP) 03.05.1999": 'wind_data_1999-05-03.json',
   "Hurricane Charlie": 'hurricane_charlie.json',
-  "Hurricane Ika": 'hurricane_ika.json'
+  "Hurricane Ike": 'hurricane_ika.json'
 };
 
 let selectedEvent = 'wind_data.json';
@@ -183,53 +183,77 @@ async function init() {
   animate();
 }
 
+
 function animateParticles() {
   const positionAttribute = particles.getAttribute('position');
   const colorAttribute = particles.getAttribute('color'); // Get color attribute
   speedFactor = 0.01;
 
-  if ( center == null ) center = nonNullCenter;
+  if (center == null) center = nonNullCenter;
 
   for (let i = 0; i < particleCount; i++) {
-      let x = positionAttribute.getX(i);
-      let y = positionAttribute.getY(i);
-      const iy = Math.round(Math.abs(y - 90) * 4);
-      const jx = Math.round((x + 180) * 4);
+    let x = positionAttribute.getX(i);
+    let y = positionAttribute.getY(i);
+    const iy = Math.floor(Math.abs(y - 90) * 4);
+    const jx = Math.floor((x + 180) * 4);
+    const ty = Math.abs(y - 90) * 4 - iy;
+    const tx = (x + 180) * 4 - jx;
+    
+    if (iy < 0 || iy >= 720 || jx < 0 || jx >= 1439) continue;
 
-      if (iy < 0 || iy >= 721 || jx < 0 || jx >= 1440) continue;
+    // Bilinear interpolation for U component
+    const u00 = windSpeedU[iy][jx];
+    const u01 = windSpeedU[iy][jx + 1];
+    const u10 = windSpeedU[iy + 1][jx];
+    const u11 = windSpeedU[iy + 1][jx + 1];
 
-      const uComp = windSpeedU[iy][jx];
-      const vComp = windSpeedV[iy][jx];
-      const velocity = Math.sqrt(uComp * uComp + vComp * vComp); // Calculate velocity
+    const uInterp = u00 * (1 - tx) * (1 - ty) +
+                    u01 * tx * (1 - ty) +
+                    u10 * (1 - tx) * ty +
+                    u11 * tx * ty;
 
-      // Map velocity to hue (0 to 120)
-      const maxVelocity = 7.5; // Adjust based on expected wind speed range
-      const hue = (velocity / maxVelocity) * 120; // Map velocity to hue (0 to 120)
-      const color = new THREE.Color();
-      color.setHSL(hue / 360, 1.0, 0.25); // Convert hue to HSL
+    // Bilinear interpolation for V component
+    const v00 = windSpeedV[iy][jx];
+    const v01 = windSpeedV[iy][jx + 1];
+    const v10 = windSpeedV[iy + 1][jx];
+    const v11 = windSpeedV[iy + 1][jx + 1];
 
-      colorAttribute.setXYZ(i, color.r, color.g, color.b); // Set color
+    const vInterp = v00 * (1 - tx) * (1 - ty) +
+                    v01 * tx * (1 - ty) +
+                    v10 * (1 - tx) * ty +
+                    v11 * tx * ty;
 
-      x += speedFactor * uComp;
-      y += speedFactor * vComp;
+    const velocity = Math.sqrt(uInterp * uInterp + vInterp * vInterp); // Calculate velocity
 
-      if ((x <= center.x - visibleWidth / 2) || (x >= center.x + visibleWidth / 2)) x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
-      if ((y <= center.y - visibleHeight / 2) || (y >= center.y + visibleHeight / 2)) y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
+    // Map velocity to hue (0 to 120)
+    const maxVelocity = 7.5; // Adjust based on expected wind speed range
+    const hue = (velocity / maxVelocity) * 120; // Map velocity to hue (0 to 120)
+    const color = new THREE.Color();
+    color.setHSL(hue / 360, 1.0, 0.25); // Convert hue to HSL
 
-      if (Math.abs(uComp) < 0.0005 && Math.abs(vComp) < 0.0005 || Math.random() > 0.99) {
-          x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
-          y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
-      }
+    colorAttribute.setXYZ(i, color.r, color.g, color.b); // Set color
 
-      if ((x <= -180) || (x >= 180)) x = Math.random() * 360 - 180;
-      if ((y <= -90) || (y >= 90)) y = Math.random() * 180 - 90;
+    x += speedFactor * uInterp;
+    y += speedFactor * vInterp;
 
-      positionAttribute.setXYZ(i, x, y, 0.5);
+    if ((x <= center.x - visibleWidth / 2) || (x >= center.x + visibleWidth / 2)) x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
+    if ((y <= center.y - visibleHeight / 2) || (y >= center.y + visibleHeight / 2)) y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
+
+    if (Math.abs(uInterp) < 0.0005 && Math.abs(vInterp) < 0.0005 || Math.random() > 0.99) {
+      x = center.x + Math.random() * visibleWidth - visibleWidth / 2;
+      y = center.y + Math.random() * visibleHeight - visibleHeight / 2;
+    }
+
+    if ((x <= -180) || (x >= 180)) x = Math.random() * 360 - 180;
+    if ((y <= -90) || (y >= 90)) y = Math.random() * 180 - 90;
+
+    positionAttribute.setXYZ(i, x, y, 0.5);
   }
 
   positionAttribute.needsUpdate = true;
   colorAttribute.needsUpdate = true; // Update color attribute
 }
+
 
 function getCameraCenter() {
   const direction = new THREE.Vector3();
